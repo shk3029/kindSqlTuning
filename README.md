@@ -27,10 +27,45 @@
     2. 데이터 딕셔너리에 미리 수집해 둔 오브젝트 통계 및 시스템 통계정보를 이용해 각 실행계획 및 예상비용을 산정
     3. 최저 비용을 나타내는 실행계획을 선택
   - 실행계획과 비용
+    - SQL 옵티마이저는 자동차 내비게이션과 비슷 (경로 요약, 모의 주행)
+    - DBMS의 'SQL 실행경로 미리보기' = 실행계획(Execution Plan)
+    - 옵티마이저가 특정 실행계획을 선택하는 근거?
+      ~~~
+      예제) 테이블과 인덱스를 생성해본 후, 테스트
+      CREATE TABLE EMP (
+        EMPNO NUMBER(5) NOT NULL,
+        ENAME VARCHAR2(20) NOT NULL,
+        JOBS VARCHAR2(20),
+        DEPTNO NUMBER(5) NOT NULL
+      );
+
+      CREATE TABLE T
+      AS
+      SELECT D.NO, E.*
+      FROM EMP E, (SELECT ROWNUM NO FROM DUAL CONNECT BY LEVEL <= 1000) D;
+
+      CREATE INDEX t_x01 on t(deptno, no);
+      CREATE INDEX t_x02 on t(deptno, jobs, no);
+
+      * 생성한 T 테이블에 통계정보를 수집하는 명령어
+      exec dbms_stats.gather_table_stats(user, 't');
+
+      * AutoTrace를 활성하고 SQL을 실행하면, 실행계획을 확인할 수 있음
+      set autotrace on ;
+
+      각 인덱스 스캔 및 TABLE FULL SCAN 확인해보면 t_x01의 cost가 가장 낮음
+      ~~~
+    - 옵티마이저가 t_x01 인덱스를 선택한 근거가 비용임을 알 수 있음
+    - 비용(cost)는 쿼리를 수행하는 동안 발생한 것으로 예상하는 I/O 횟수 또는 예상 소요시간을 표현
+    - Cost는 옵티마이저가 여러 통계정보를 활용해서 계산해 낸 예상값
   - 옵티마이저 힌트
+    - SQL 옵티마이저는 대부분 좋은 선택을 하지만, 완벽하지 않음
+    - 옵티마이저 힌트를 이용해 데이터 액세스 경로를 바꿀 수 있음
+    - /*+ INDEX(A 고객_PK) */
   
 1.2 SQL 공유 및 재사용
   - 소프트 파싱 vs 하드 파싱
+
   - 바인드 변수의 중요성
 
 1.3 데이터 저장 구조 및 I/O 메커니즘
